@@ -1,0 +1,38 @@
+🔐 CTF Mini Challenge: “HashMeIfYouCan”
+🎯 Descripción del reto:
+
+Un sistema de validación de contraseñas antiguas usa un algoritmo simple de hashing.
+Para validar, toma la cadena ingresada y calcula su hash como:
+
+hash += carácter_ASCII * posición_en_la_cadena (empezando desde 1)
+
+Ejemplo:
+Para "abc":
+→ hash = 'a'*1 + 'b'*2 + 'c'*3 = 97 + 196 + 297 = 590
+
+Hay una clave exacta que al ser introducida genera el hash 2024.
+Tu misión es encontrarla y obtener la flag secreta.
+
+🧩 Tu tarea:
+Crea un programa que:
+
+Pida una cadena.
+
+Calcule el hash con la fórmula dada.
+
+Compare con 2024.
+
+Si coincide:
+
+Muestra:
+¡Acceso concedido! FLAG: CTF{hash_pwned}
+
+Si no coincide:
+
+Muestra:
+Hash incorrecto. Intenta de nuevo.
+
+💡 Tips:
+Usa strlen() y input[i] * (i + 1) en un bucle.
+
+Puedes hacer brute-force, probar cadenas manualmente, o incluso escribir otro programa que te ayude a encontrar la cadena correcta.
