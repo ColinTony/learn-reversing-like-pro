@@ -41,7 +41,6 @@ void read_string(char *cadena, size_t size)
 {
   fgets(cadena , size, stdin);
   cadena[strcspn(cadena , "\n")] = '\0';
-  fflush(stdin);
 }
 
 // funcion operacion XOR
