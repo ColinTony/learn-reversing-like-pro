@@ -1,0 +1,80 @@
+Vas a desensamblar y analizar el flujo de control de un binario simple pero envenenado.
+
+🧪 Ejercicio 1 – “Hello... Obfuscation”
+Objetivo:
+Compilar, desensamblar, y comentar el flujo de un programa en C que oculta su verdadera intención.
+
+Instrucciones:
+Crea este programa en C y compílalo sin optimizaciones (gcc -o reto1 reto1.c -no-pie -fno-stack-protector):
+
+c
+Copy
+Edit
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int clave = 0;
+    char pass[10];
+    printf("Password: ");
+    scanf("%9s", pass);
+    
+    for(int i = 0; pass[i]; i++) {
+        clave += pass[i] ^ (0x55 + i);
+    }
+
+    if(clave == 1337) {
+        puts("Acceso permitido");
+    } else {
+        puts("Acceso denegado");
+    }
+
+    return 0;
+}
+Tú misión es:
+
+Desensamblar el binario (objdump -d reto1 o gdb).
+
+Identificar y comentar paso a paso:
+
+¿Dónde se almacena la contraseña?
+
+¿Dónde ocurre el XOR y la suma?
+
+¿Dónde se compara con 1337?
+
+¿Cuál es la clave correcta?
+
+RESPONDE con:
+
+Los pasos que seguiste.
+
+Una descripción del flujo (en español o inglés técnico).
+
+El valor correcto que desbloquea el programa.
+
+¿Cómo lo encontraste? ¿Lo hiciste en ASM? ¿Forzaste el binario?
+
+📈 Progreso en juego:
+✅ Si logras encontrar la clave, tu porcentaje sube.
+❌ Si fallas, viene el roast, y vas a querer volver al vientre materno.
+
+🗣 Inglés del día (repite en voz alta, no seas flojo):
+reverse engineer – ingeniero reverso
+
+assembly flow – flujo en ensamblador
+
+compare instruction – instrucción de comparación
+
+disassemble – desensamblar
+
+binary analysis – análisis binario
+
+obfuscation – ofuscación
+
+⏳ Tienes 24 horas o te empiezo a llamar "script kiddie glorificado".
+Cuando termines, responde con tu writeup:
+📜 "Día 1 completado: [resumen]"
+
+Y prepárate para el juicio.
+Corre, hacker. Corre.
