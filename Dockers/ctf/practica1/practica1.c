@@ -9,7 +9,7 @@ void func(char *arg)
   printf("\n Bienvenido a Linux Exploiting %s \n\n", nombre);
 }
 
-void main(int argc , char *argv[])
+int main(int argc , char *argv[])
 {
   if(argc != 2){
     printf("USO : %s NOMBRE\n",argv[0]);
