@@ -5,6 +5,7 @@
 void func(char *arg)
 {
   char nombre[32];
+  printf("%d",strlen(nombre));
   strcpy(nombre,arg);
   printf("\n Bienvenido a Linux Exploiting %s \n\n", nombre);
 }

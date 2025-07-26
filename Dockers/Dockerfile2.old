@@ -51,8 +51,9 @@ RUN pip3 install pwntools ropper one_gadget
 RUN bash -c "$(curl -fsSL https://gef.blah.cat/sh)"
 
 # 🔍 Instala radare2 desde fuente (versión más reciente)
-RUN git clone https://github.com/radareorg/radare2
-RUN radare2/sys/install.sh
+RUN git clone --depth=1 https://github.com/radareorg/radare2 /opt/radare2 && \
+    /opt/radare2/sys/install.sh && \
+    rm -rf /opt/radare2
 
 # 📁 Carpeta de trabajo
 WORKDIR /ctf
