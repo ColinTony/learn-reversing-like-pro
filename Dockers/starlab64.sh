@@ -30,7 +30,7 @@ function starLab64()
 	echo -e "\n\n ${grenColour}[+]${endColour} ${yellowColour}Iniciando Docker vulnerable (Recuerda que esto afecta tu ASLR del host)${endColour}\n"
 	sleep 2
   hola_cursor;
-	sudo docker run -it --privileged --rm -v /home/c0l1nr00t/Colin/Reversing/Dockers/ctf:/ctf lab64 bash -c "echo 0 > /proc/sys/kernel/randomize_va_space && exec bash"
+	sudo docker run -it --privileged --rm -v ./ctf:/ctf lab64 bash -c "echo 0 > /proc/sys/kernel/randomize_va_space && exec bash"
 	echo -e '[-] Saliendo ...\n'
 	echo -e 'Reiniciando ASLR del host...\n'
 	sleep 2
@@ -43,6 +43,26 @@ function starLab64()
 	fi
   adios_cursor;
 }
+
+function startLab32()
+{
+    echo -e "\n\n ${grenColour}[+]${endColour} ${yellowColour}Iniciando Docker vulnerable de 32 bits (Recuerda que esto afecta tu ASLR del host)${endColour}\n"
+    sleep 2
+    hola_cursor;
+    sudo docker run -it --privileged --rm -v ./ctf:/ctf lab32 bash -c "echo 0 > /proc/sys/kernel/randomize_va_space && exec bash"
+    echo -e '[-] Saliendo ...\n'
+    echo -e 'Reiniciando ASLR del host...\n'
+    sleep 2
+    sudo echo 2 > /proc/sys/kernel/randomize_va_space
+    status=$(cat /proc/sys/kernel/randomize_va_space)
+    if [ "$status" -eq 2 ]; then
+        echo 'ASLR de nuevo activado en host.'
+    else
+        echo 'Hubo un error al activar ASLR. (urgente comprobarlo, podría dejar el host vulnerable)'
+    fi
+    adios_cursor;
+}
+
 
 # funciones del cursor
 function adios_cursor()
@@ -63,6 +83,16 @@ function create_docker()
     starLab64;
   else
     exit_tool 1 "Error no existe el archivo Dockerfile";
+  fi
+}
+
+function create_docker32() {
+  if [[ -f "./Dockerfile32" ]]; then
+    echo -e "${blueColour}[-] Construyendo contenedor Docker 32 bits...${endColour}"
+    sudo docker build -t lab32 -f Dockerfile32 .
+    startLab32
+  else
+    exit_tool 1 "Error: no existe el archivo Dockerfile32"
   fi
 }
 
@@ -94,8 +124,10 @@ function helpPanel()
 {
   echo -e "\n ${yellowColour}[?]${endColour}${grayColour} PANEL DE AYUDA ${endColour} \n";
   echo -e "\n\t${yellowColour}-h: ${endColour}${grayColour}Muestra este panel de ayuda.${endColour}";
-  echo -e "\n\t${yellowColour}-i: ${endColour}${grayColour}Crea la imagen vulnerable de docker.${endColour}"; 
+  echo -e "\n\t${yellowColour}-i: ${endColour}${grayColour}Crea la imagen vulnerable de docker.${endColour}";
+  echo -e "\n\t${yellowColour}-k: ${endColour}${grayColour}Crea la imagen vulnerable de docker (32 Bits).${endColour}";
   echo -e "\n\t${yellowColour}-s: ${endColour}${grayColour}Inicia el contenedor vulnerable para reversing.${endColour}";
+  echo -e "\n\t${yellowColour}-l: ${endColour}${grayColour}Inicia el contenedor vulnerable para reversing 32 Bits.${endColour}";
   echo -e "\n\n";
 }
 
@@ -144,12 +176,14 @@ adios_cursor;
 check_root;
 
 
-while getopts ":his" arg; do
+while getopts ":hislk" arg; do
 
   case $arg in
     h)let counter=1; ;;
     i)let counter=2; ;;
+    k)let counter=5; ;;
     s)let counter=3; ;;
+    l)let counter=4; ;;
   esac 
 done;
 
@@ -158,6 +192,8 @@ done;
     1) helpPanel;;
     2) create_docker;;
     3) starLab64;;
+    4) startLab32;;
+    5) create_docker32;;
     *) catch_default;;
   esac;
 
