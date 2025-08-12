@@ -30,7 +30,7 @@ function starLab64()
 	echo -e "\n\n ${grenColour}[+]${endColour} ${yellowColour}Iniciando Docker vulnerable (Recuerda que esto afecta tu ASLR del host)${endColour}\n"
 	sleep 2
   hola_cursor;
-	sudo docker run -it --privileged --rm -v ./ctf:/ctf lab64 bash -c "echo 0 > /proc/sys/kernel/randomize_va_space && exec bash"
+	sudo docker run -it --privileged --rm -v ./ctf:/ctf lab64 bash -c "sudo echo 0 > /proc/sys/kernel/randomize_va_space && exec bash"
 	echo -e '[-] Saliendo ...\n'
 	echo -e 'Reiniciando ASLR del host...\n'
 	sleep 2
@@ -49,7 +49,8 @@ function startLab32()
     echo -e "\n\n ${grenColour}[+]${endColour} ${yellowColour}Iniciando Docker vulnerable de 32 bits (Recuerda que esto afecta tu ASLR del host)${endColour}\n"
     sleep 2
     hola_cursor;
-    sudo docker run -it --privileged --rm -v ./ctf:/ctf lab32 bash -c "echo 0 > /proc/sys/kernel/randomize_va_space && exec bash"
+    sudo echo 0 > /proc/sys/kernel/randomize_va_space
+    sudo docker run -it --privileged --rm -v ./ctf:/ctf lab32 bash -c "exec bash"
     echo -e '[-] Saliendo ...\n'
     echo -e 'Reiniciando ASLR del host...\n'
     sleep 2

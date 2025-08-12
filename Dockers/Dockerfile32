@@ -20,10 +20,22 @@ RUN dpkg --add-architecture i386 && \
     git \
     curl
 
+#pwndbg
+RUN curl -qsL 'https://install.pwndbg.re' | sh -s -- -t pwndbg-gdb
+
+# === Protostar stack binaries with SUID ===
+RUN mkdir -p /opt/protostar/bin
+COPY ./WarGames/protostar_build/protostar/bin/stack* /opt/protostar/bin/
+# Propietario root y SUID (rws para root)
+RUN chown root:root /opt/protostar/bin/
+RUN chmod 4755 /opt/protostar/bin/stack*
+
+# ==========================================
 # RADARE
 RUN git clone https://github.com/radareorg/radare2
 RUN radare2/sys/install.sh
-
-WORKDIR /ctf
+RUN useradd -m -s /bin/bash testing
+USER testing
+WORKDIR /share
 # Deja listo el contenedor para compilar binarios vulnerables
 CMD ["/bin/bash"]

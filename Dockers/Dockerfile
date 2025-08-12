@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     gdb \
+    gdb-doc \
+    gdbserver \
+    gdb-peda \
     python3 \
     python3-pip \
     python3-dev \
@@ -53,7 +56,10 @@ RUN bash -c "$(curl -fsSL https://gef.blah.cat/sh)"
 # 🔍 Instala radare2 desde fuente (versión más reciente)
 RUN git clone https://github.com/radareorg/radare2
 RUN radare2/sys/install.sh
+RUN useradd -m -s /bin/bash testing
+# instalando pwndbg
+RUN curl -qsL 'https://install.pwndbg.re' | sh -s -- -t pwndbg-gdb
 
 # 📁 Carpeta de trabajo
-WORKDIR /ctf
+WORKDIR /share
 CMD ["/bin/bash"]
