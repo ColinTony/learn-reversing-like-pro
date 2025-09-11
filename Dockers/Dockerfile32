@@ -18,7 +18,8 @@ RUN dpkg --add-architecture i386 && \
     sudo \
     wget \
     git \
-    curl
+    curl \
+    python
 
 #pwndbg
 RUN curl -qsL 'https://install.pwndbg.re' | sh -s -- -t pwndbg-gdb
@@ -35,7 +36,11 @@ RUN chmod 4755 /opt/protostar/bin/stack*
 RUN git clone https://github.com/radareorg/radare2
 RUN radare2/sys/install.sh
 RUN useradd -m -s /bin/bash testing
-USER testing
 WORKDIR /share
+#Pythoin
+RUN wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
+RUN python ./get-pip.py
+
+USER testing
 # Deja listo el contenedor para compilar binarios vulnerables
 CMD ["/bin/bash"]

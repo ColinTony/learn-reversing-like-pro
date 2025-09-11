@@ -50,7 +50,7 @@ function startLab32()
     sleep 2
     hola_cursor;
     sudo echo 0 > /proc/sys/kernel/randomize_va_space
-    sudo docker run -it --privileged --rm -v ./ctf:/ctf lab32 bash -c "exec bash"
+    sudo docker run -it --privileged --rm -v ./ctf:/ctf -v ./share:/share lab32 bash -c "exec bash"
     echo -e '[-] Saliendo ...\n'
     echo -e 'Reiniciando ASLR del host...\n'
     sleep 2
