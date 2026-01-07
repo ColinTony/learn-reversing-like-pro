@@ -1,4 +1,4 @@
-FROM --platform=linux/386 i386/debian:bullseye
+FROM i386/debian:bullseye
 
 # Actualiza e instala solo lo necesario
 RUN dpkg --add-architecture i386 && \
@@ -54,10 +54,19 @@ RUN curl -qsL 'https://install.pwndbg.re' | sh -s -- -t pwndbg-gdb
 
 # === Protostar stack binaries with SUID ===
 RUN mkdir -p /opt/protostar/bin
+RUN mkdir -p /opt/ejercicios/bin
+
 COPY ./WarGames/protostar_build/protostar/bin/stack* /opt/protostar/bin/
+COPY ./WarGames/ejercicios/*.c /opt/ejercicios/bin/
+
+# Compilacion de ejericcios
+RUN cd /opt/ejercicios/bin/ && gcc -fno-stack-protector -z execstack ./p100.c -o ./p100
+
 # Propietario root y SUID (rws para root)
 RUN chown root:root /opt/protostar/bin/
 RUN chmod 4755 /opt/protostar/bin/stack*
+RUN chmod 4755 /opt/ejercicios/bin/*
+RUN chmod 600 /opt/ejercicios/bin/*.c 
 
 # ==========================================
 
