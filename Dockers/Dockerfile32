@@ -19,7 +19,8 @@ RUN dpkg --add-architecture i386 && \
     wget \
     git \
     curl \
-    python
+    python \
+    libc6:i386 libstdc++6:i386 gdb
 
 # ==========================================
 # RADARE

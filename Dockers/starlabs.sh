@@ -30,7 +30,8 @@ function starLab64()
 	echo -e "\n\n ${greenColour}[+]${endColour} ${yellowColour}Iniciando Docker vulnerable (Recuerda que esto afecta tu ASLR del host)${endColour}\n"
 	sleep 2
   hola_cursor;
-	sudo docker run -it --privileged --rm -v ./ctf:/ctf lab64 bash -c "sudo echo 0 > /proc/sys/kernel/randomize_va_space && exec bash"
+  sudo echo 0 > /proc/sys/kernel/randomize_va_space
+  sudo docker run -it --privileged --rm -v ./ctf:/ctf -v ./share:/share lab64 bash -c "exec bash"
 	echo -e '[-] Saliendo ...\n'
 	echo -e 'Reiniciando ASLR del host...\n'
 	sleep 2
@@ -41,27 +42,6 @@ function starLab64()
 	else
 		echo 'Hubo un error al activar ASLR. (urgente comprobarlo podria dejar el host vulnerable)'
 	fi
-  adios_cursor;
-}
-
-
-function startLab_32() {
-
-  echo -e "\n\n ${greenColour}[+]${endColour} ${yellowColour}Iniciando Docker vulnerable de 32 bits (Recuerda que esto afecta tu ASLR del host)${endColour}\n"
-  sleep 2
-  hola_cursor;
-  sudo echo 0 > /proc/sys/kernel/randomize_va_space
-  sudo docker run --platform=linux/386 -it --privileged --rm -v ./ctf:/ctf -v ./share:/share lab32 bash -c "exec bash"
-  echo -e '[-] Saliendo ...\n'
-  echo -e 'Reiniciando ASLR del host...\n'
-  sleep 2
-  sudo echo 2 > /proc/sys/kernel/randomize_va_space
-  status=$(cat /proc/sys/kernel/randomize_va_space)
-  if [ "$status" -eq 2 ]; then
-      echo 'ASLR de nuevo activado en host.'
-  else
-      echo 'Hubo un error al activar ASLR. (urgente comprobarlo, podría dejar el host vulnerable)'
-  fi
   adios_cursor;
 }
 
