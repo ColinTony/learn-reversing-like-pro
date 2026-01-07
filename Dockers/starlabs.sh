@@ -27,7 +27,7 @@ function check_root()
 
 function starLab64()
 {
-	echo -e "\n\n ${grenColour}[+]${endColour} ${yellowColour}Iniciando Docker vulnerable (Recuerda que esto afecta tu ASLR del host)${endColour}\n"
+	echo -e "\n\n ${greenColour}[+]${endColour} ${yellowColour}Iniciando Docker vulnerable (Recuerda que esto afecta tu ASLR del host)${endColour}\n"
 	sleep 2
   hola_cursor;
 	sudo docker run -it --privileged --rm -v ./ctf:/ctf lab64 bash -c "sudo echo 0 > /proc/sys/kernel/randomize_va_space && exec bash"
@@ -44,9 +44,30 @@ function starLab64()
   adios_cursor;
 }
 
+
+function startLab_32() {
+
+  echo -e "\n\n ${greenColour}[+]${endColour} ${yellowColour}Iniciando Docker vulnerable de 32 bits (Recuerda que esto afecta tu ASLR del host)${endColour}\n"
+  sleep 2
+  hola_cursor;
+  sudo echo 0 > /proc/sys/kernel/randomize_va_space
+  sudo docker run --platform=linux/386 -it --privileged --rm -v ./ctf:/ctf -v ./share:/share lab32 bash -c "exec bash"
+  echo -e '[-] Saliendo ...\n'
+  echo -e 'Reiniciando ASLR del host...\n'
+  sleep 2
+  sudo echo 2 > /proc/sys/kernel/randomize_va_space
+  status=$(cat /proc/sys/kernel/randomize_va_space)
+  if [ "$status" -eq 2 ]; then
+      echo 'ASLR de nuevo activado en host.'
+  else
+      echo 'Hubo un error al activar ASLR. (urgente comprobarlo, podría dejar el host vulnerable)'
+  fi
+  adios_cursor;
+}
+
 function startLab32()
 {
-    echo -e "\n\n ${grenColour}[+]${endColour} ${yellowColour}Iniciando Docker vulnerable de 32 bits (Recuerda que esto afecta tu ASLR del host)${endColour}\n"
+    echo -e "\n\n ${greenColour}[+]${endColour} ${yellowColour}Iniciando Docker vulnerable de 32 bits (Recuerda que esto afecta tu ASLR del host)${endColour}\n"
     sleep 2
     hola_cursor;
     sudo echo 0 > /proc/sys/kernel/randomize_va_space
@@ -87,10 +108,20 @@ function create_docker()
   fi
 }
 
+function create_docker_32() {
+  if [[ -f "./Dockerfile32" ]]; then
+    echo -e "${blueColour}[-] Construyendo contenedor Docker 32 bits...${endColour}"
+    sudo docker buildx build --platform linux/386 -t lab32 -f Dockerfile32 --load . || exit_tool 1 "Falló el build de lab32 (linux/386)"
+    startLab32
+  else
+    exit_tool 1 "Error: no existe el archivo Dockerfile32"
+  fi
+}
 function create_docker32() {
   if [[ -f "./Dockerfile32" ]]; then
     echo -e "${blueColour}[-] Construyendo contenedor Docker 32 bits...${endColour}"
-    sudo docker build -t lab32 -f Dockerfile32 .
+    
+    sudo docker build --platform=linux/386 -t lab32 -f Dockerfile32 .
     startLab32
   else
     exit_tool 1 "Error: no existe el archivo Dockerfile32"
@@ -116,7 +147,7 @@ function exit_tool()
     exit $code;
   fi
 
-  echo -e "\n\n${grenColour} Espero haya disfrutado su estancia hackeando ${endColour}";
+  echo -e "\n\n${greenColour} Espero haya disfrutado su estancia hackeando ${endColour}";
   hola_cursor;
   exit $code;
 }
