@@ -24,6 +24,7 @@ RUN dpkg --add-architecture i386 && \
     vim \
     netcat \
     socat \
+    sudo \
     file \
     unzip \
     tmux \
@@ -56,9 +57,18 @@ RUN pip3 install pwntools ropper one_gadget
 RUN bash -c "$(curl -fsSL https://gef.blah.cat/sh)"
 
 # 🔍 Instala radare2 desde fuente (versión más reciente)
-RUN git clone https://github.com/radareorg/radare2
-RUN radare2/sys/install.sh
+# 🔍 Instala radare2 desde fuente (versión más reciente, git + meson)
+RUN pip3 install meson ninja
+RUN git clone https://github.com/radareorg/radare2 /tmp/radare2 && \
+    cd /tmp/radare2 && \
+    meson setup build && \
+    sed -i 's/unsigned short cw;/; unsigned short cw;/g' subprojects/qjs/cutils.h && \
+    ninja -C build && \
+    ninja -C build install && \
+    ldconfig && \
+    rm -rf /tmp/radare2
 RUN useradd -m -s /bin/bash testing
+RUN echo "testing ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 # instalando pwndbg
 RUN curl -qsL 'https://install.pwndbg.re' | sh -s -- -t pwndbg-gdb
 
