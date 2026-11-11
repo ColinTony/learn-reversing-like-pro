@@ -11,8 +11,13 @@ pass "Kernel i386: $(uname -m), $(uname -r)"
 for cmd in gcc gdb readelf file python3 r2; do
   command -v "$cmd" >/dev/null || fail "Falta $cmd"
 done
-python3 -c 'import pwn' || fail 'Falta pwntools'
-pass 'Herramientas instaladas'
+pass 'Herramientas de reversing instaladas'
+# Pwntools puede importar en i386, pero upstream no soporta Python de 32 bits.
+if python3 -c 'import pwn' >/dev/null 2>&1; then
+  echo '[AVISO] pwntools importable en i386, pero no soportado oficialmente; úsalo desde Kali x86_64.'
+else
+  echo '[AVISO] pwntools no pudo importarse en la VM i386; úsalo desde Kali x86_64.'
+fi
 
 BIN=/opt/protostar/bin/stack0
 [[ -x "$BIN" ]] || fail "No existe $BIN"
@@ -23,8 +28,18 @@ pass 'stack0 ELF32 y SUID root en filesystem invitado'
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-printf 'abc\n' | "$BIN" > "$TMP/stack0.out" 2>&1 || fail 'stack0 no se ejecuta'
-pass 'stack0 se ejecuta sin modificar el binario'
+if printf 'abc\n' | "$BIN" > "$TMP/stack0.out" 2>&1; then
+  pass 'stack0 se ejecuta sin modificar el binario'
+else
+  code=$?
+  echo "[DIAGNOSTICO] stack0 terminó con código $code; salida:" >&2
+  cat "$TMP/stack0.out" >&2
+  echo '[DIAGNOSTICO] Dependencias del binario (ldd):' >&2
+  ldd "$BIN" >&2 || true
+  echo '[DIAGNOSTICO] Intérprete ELF:' >&2
+  readelf -l "$BIN" | grep -A1 -F 'Requesting program interpreter' >&2 || true
+  fail "stack0 no se pudo ejecutar correctamente (código $code)"
+fi
 
 cat > "$TMP/check.c" <<'C'
 #include <stdio.h>
