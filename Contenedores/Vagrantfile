@@ -1,80 +1,30 @@
+# Laboratorio i386 aislado. Ejecutar desde Contenedores/.
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/xenial32"
+  config.vm.box = ENV.fetch("REVERSING_BOX", "generic/debian12")
+  if config.vm.box == "generic/debian12"
+    config.vm.box_version = "4.3.12"
+    config.vm.box_architecture = "i386"
+  end
+  config.vm.box_url = ENV["REVERSING_BOX_URL"] if ENV["REVERSING_BOX_URL"] && !ENV["REVERSING_BOX_URL"].empty?
+  config.vm.box_check_update = false
+  config.vm.hostname = "reversing-legacy32"
+  config.vm.boot_timeout = 600
+  config.ssh.forward_agent = false
+
+  # rsync unidireccional del host al invitado, nunca SUID sobre carpeta compartida.
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.synced_folder "..", "/workspace", type: "rsync",
+    rsync__exclude: [".git/", ".vagrant/", "*.box", "*.qcow2", "*.vdi"]
+
   config.vm.provider "virtualbox" do |vb|
-    vb.memory = "2048"
+    vb.name = "reversing-legacy32"
+    vb.memory = 2048
     vb.cpus = 2
+    vb.gui = false
   end
 
-  # Map current directory to /vagrant to access WarGames files
-  config.vm.synced_folder ".", "/vagrant"
-
-  config.vm.provision "shell", inline: <<-SHELL
-    export DEBIAN_FRONTEND=noninteractive
-    
-    # Enable 32-bit architecture (redundant on 32-bit box but harmless)
-    # dpkg --add-architecture i386
-    apt-get update
-    
-    # Install dependencies
-    apt-get install -y \
-      gcc gdb make binutils libc6-dev build-essential net-tools vim nano file strace sudo wget git curl python \
-      libc6 libstdc++6 gdb \
-      ca-certificates pkg-config python3 python3-pip libssl-dev libzip-dev zlib1g-dev liblz4-dev
-
-    # Build Radare2 (Version from August 2025)
-    if [ ! -d "/tmp/radare2" ]; then
-      cd /tmp
-      git clone https://github.com/radareorg/radare2
-      cd radare2
-      
-      git checkout $(git rev-list -n 1 --before="2025-08-15" master)
-      
-      ./configure --prefix=/usr
-
-      # Pre-clone QuickJS to patch it before compilation
-      # This prevents the "label can only be part of a statement" error on older GCC
-      # We clone the version that matches the submodule in the checked-out radare2
-      git submodule update --init subprojects/qjs
-      sed -i 's/unsigned short cw;/; unsigned short cw;/g' subprojects/qjs/cutils.h
-
-      # Compile and Install
-      make -j2
-      make install
-      ldconfig
-      
-      cd /root
-      rm -rf /tmp/radare2
-    fi
-
-    # Install Pwndbg
-    curl -qsL 'https://install.pwndbg.re' | sh -s -- -t pwndbg-gdb
-
-    # Setup Exercises
-    mkdir -p /opt/protostar/bin
-    mkdir -p /opt/ejercicios/bin
-
-    # Copy files from /vagrant (synced folder)
-    if [ -d "/vagrant/WarGames/protostar_build/protostar/bin" ]; then
-      cp /vagrant/WarGames/protostar_build/protostar/bin/stack* /opt/protostar/bin/
-    fi
-    if [ -d "/vagrant/WarGames/ejercicios" ]; then
-      cp /vagrant/WarGames/ejercicios/*.c /opt/ejercicios/bin/
-    fi
-
-    # Compile exercises
-    cd /opt/ejercicios/bin/
-    gcc -fno-stack-protector -z execstack ./p100.c -o ./p100
-
-    # Set Permissions (SUID)
-    chown -R root:root /opt/protostar/bin/
-    chmod 4755 /opt/protostar/bin/stack*
-    chmod 4755 /opt/ejercicios/bin/*
-    chmod 600 /opt/ejercicios/bin/*.c
-
-    # Install Python 2 pip
-    wget https://bootstrap.pypa.io/pip/2.7/get-pip.py -O /tmp/get-pip.py
-    python /tmp/get-pip.py
-
-    echo "Vagrant provisioning complete!"
-  SHELL
+  # NAT para provision/SSH; ningún servicio vulnerable se expone automáticamente.
+  config.vm.provision "shell", path: "provision/01-base.sh"
+  config.vm.provision "shell", path: "provision/02-exercises.sh"
+  config.vm.provision "shell", path: "provision/03-radare2.sh" if ENV.fetch("REVERSING_INSTALL_R2", "1") == "1"
 end
