@@ -28,17 +28,23 @@ pass 'stack0 ELF32 y SUID root en filesystem invitado'
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+# Algunos ejercicios históricos terminan con código distinto de cero.
+# Comprobar la respuesta, no solo el estado de salida.
 if printf 'abc\n' | "$BIN" > "$TMP/stack0.out" 2>&1; then
-  pass 'stack0 se ejecuta sin modificar el binario'
+  code=0
 else
   code=$?
+fi
+if [[ "$code" -lt 128 ]] && grep -Fq 'Try again?' "$TMP/stack0.out"; then
+  pass "stack0 responde correctamente (código de salida: $code)"
+else
   echo "[DIAGNOSTICO] stack0 terminó con código $code; salida:" >&2
   cat "$TMP/stack0.out" >&2
   echo '[DIAGNOSTICO] Dependencias del binario (ldd):' >&2
   ldd "$BIN" >&2 || true
   echo '[DIAGNOSTICO] Intérprete ELF:' >&2
   readelf -l "$BIN" | grep -A1 -F 'Requesting program interpreter' >&2 || true
-  fail "stack0 no se pudo ejecutar correctamente (código $code)"
+  fail "stack0 no produjo la salida esperada (código $code)"
 fi
 
 cat > "$TMP/check.c" <<'C'

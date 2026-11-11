@@ -2,7 +2,7 @@
 
 Laboratorio local de reversing y explotación de binarios. Mantiene los ejercicios originales de `Contenedores/WarGames` y reemplaza el aprovisionamiento antiguo basado en `ubuntu/xenial32` por **Debian 12 i386 con kernel de 32 bits**, dentro de **VirtualBox + Vagrant**. **No usa Docker.**
 
-> **Estado de validación:** los scripts y la sintaxis se han revisado estáticamente. No se ha arrancado la VM en este entorno de edición. La compatibilidad de `stack0`, `ptrace`, Radare2 y VirtualBox con tu Kali se comprueba al ejecutar `verify-lab.sh`; no está confirmada de antemano.
+> **Estado de validación (11 de noviembre de 2026):** comprobado en una VM real con kernel `i686`, ejecución interactiva de `stack0` y arranque de Radare2 en modo depuración. **Pendiente:** ejecutar el verificador completo tras sincronizar esta versión (incluidas pruebas de `ptrace` y GDB). No se afirma que todos los ejercicios históricos funcionen.
 
 ## Requisitos en Kali Linux
 
@@ -66,9 +66,12 @@ No modificar `/proc/sys/kernel/randomize_va_space` desde Kali.
 # En Contenedores/ en Kali
 vagrant rsync             # cambios nuevos del host -> VM
 vagrant provision         # después de rsync
-vagrant halt
-vagrant destroy           # elimina solo esta VM, no los ejercicios del host
+vagrant halt             # apaga y CONSERVA todo lo instalado
+./limpiar-vagrant.sh     # destruye solo esta VM y su disco, pide confirmación
+# ./limpiar-vagrant.sh --si  # sin pregunta (uso deliberado)
 ```
+
+**Importante:** al destruir la VM se pierden los archivos que estén **solo dentro de ella** (`/home/vagrant`, `/opt`, cambios a binarios instalados, etc.). Guarda tus scripts y notas en el repositorio del anfitrión y usa `vagrant rsync` para actualizarlos en `/workspace`. La box base de Vagrant permanece instalada, de modo que después puedes ejecutar `vagrant up --provider=virtualbox` para crear y aprovisionar una VM nueva. Ese primer arranque volverá a instalar las dependencias y compilar Radare2, por lo que requiere red y tiempo. No es necesario destruir la VM cada día; `vagrant halt` suele ser la opción más cómoda.
 
 Radare2 6.1.8 se compila desde tag y commit fijos durante el primer aprovisionamiento; requiere conexión de red. Si falla esta fase, puedes iniciar sin ella para diagnosticar:
 
