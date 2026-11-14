@@ -1,0 +1,14 @@
+# Vagrant runtime, hypervisors and local VM images
+.vagrant/
+*.box
+*.vdi
+*.vmdk
+*.qcow2
+*.ova
+
+# Python caches and core dumps
+__pycache__/
+*.pyc
+*.core
+core
+core.*

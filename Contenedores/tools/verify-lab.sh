@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Ejecutar como usuario normal DENTRO de la VM.
+set -Eeuo pipefail
+pass() { printf '[OK] %s\n' "$*"; }
+fail() { printf '[FALLO] %s\n' "$*" >&2; exit 1; }
+
+[[ "$(getconf LONG_BIT)" == 32 ]] || fail 'El kernel no es de 32 bits'
+uname -m | grep -Eq '^i[3-6]86$' || fail "Kernel incorrecto: $(uname -m)"
+pass "Kernel i386: $(uname -m), $(uname -r)"
+
+for cmd in gcc gdb readelf file python3 r2; do
+  command -v "$cmd" >/dev/null || fail "Falta $cmd"
+done
+pass 'Herramientas de reversing instaladas'
+# Pwntools puede importar en i386, pero upstream no soporta Python de 32 bits.
+if python3 -c 'import pwn' >/dev/null 2>&1; then
+  echo '[AVISO] pwntools importable en i386, pero no soportado oficialmente; úsalo desde Kali x86_64.'
+else
+  echo '[AVISO] pwntools no pudo importarse en la VM i386; úsalo desde Kali x86_64.'
+fi
+
+BIN=/opt/protostar/bin/stack0
+[[ -x "$BIN" ]] || fail "No existe $BIN"
+file "$BIN" | grep -q 'ELF 32-bit' || fail 'stack0 no es ELF de 32 bits'
+stat -c %a "$BIN" | grep -Eq '^[2467][0-7]{3}$' || fail 'stack0 no tiene SUID'
+[[ "$(stat -c %u "$BIN")" == 0 ]] || fail 'stack0 no pertenece a root'
+pass 'stack0 ELF32 y SUID root en filesystem invitado'
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+# Algunos ejercicios históricos terminan con código distinto de cero.
+# Comprobar la respuesta, no solo el estado de salida.
+if printf 'abc\n' | "$BIN" > "$TMP/stack0.out" 2>&1; then
+  code=0
+else
+  code=$?
+fi
+if [[ "$code" -lt 128 ]] && grep -Fq 'Try again?' "$TMP/stack0.out"; then
+  pass "stack0 responde correctamente (código de salida: $code)"
+else
+  echo "[DIAGNOSTICO] stack0 terminó con código $code; salida:" >&2
+  cat "$TMP/stack0.out" >&2
+  echo '[DIAGNOSTICO] Dependencias del binario (ldd):' >&2
+  ldd "$BIN" >&2 || true
+  echo '[DIAGNOSTICO] Intérprete ELF:' >&2
+  readelf -l "$BIN" | grep -A1 -F 'Requesting program interpreter' >&2 || true
+  fail "stack0 no produjo la salida esperada (código $code)"
+fi
+
+cat > "$TMP/check.c" <<'C'
+#include <stdio.h>
+#include <sys/ptrace.h>
+int main(void) {
+  if (ptrace(PTRACE_TRACEME, 0, 0, 0) == -1) { perror("ptrace"); return 1; }
+  puts("ptrace OK");
+  return 0;
+}
+C
+gcc -O0 -g -fno-pie -no-pie "$TMP/check.c" -o "$TMP/check"
+"$TMP/check" | grep -q 'ptrace OK' || fail 'ptrace(PTRACE_TRACEME) falló'
+pass 'ptrace(PTRACE_TRACEME) funciona'
+
+cat > "$TMP/debug.c" <<'C'
+#include <stdio.h>
+int main(void) { puts("debug OK"); return 0; }
+C
+gcc -O0 -g -fno-pie -no-pie "$TMP/debug.c" -o "$TMP/debug"
+gdb -q -nx -batch \
+  -ex 'set pagination off' -ex 'set disable-randomization off' \
+  -ex 'break main' -ex run -ex 'info registers eip' \
+  --args "$TMP/debug" > "$TMP/gdb.out" 2>&1 || { cat "$TMP/gdb.out"; fail 'GDB terminó con error'; }
+grep -q 'Breakpoint 1,' "$TMP/gdb.out" || { cat "$TMP/gdb.out"; fail 'GDB no detuvo en main'; }
+grep -Eq '(^|[[:space:]])eip[[:space:]]' "$TMP/gdb.out" || fail 'GDB no mostró EIP'
+pass 'GDB + breakpoint + registro EIP'
+
+sysctl kernel.randomize_va_space
+command -v setarch >/dev/null && setarch i386 -R /bin/true && pass 'setarch i386 -R funciona en el invitado'
+pass 'Pruebas mínimas superadas; no se modificó ASLR del host'
